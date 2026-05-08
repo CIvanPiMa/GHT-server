@@ -1,7 +1,8 @@
 FROM node:24-alpine AS builder
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci
+RUN apk add --no-cache python3 make g++
+COPY package.json ./
+RUN npm i
 COPY tsconfig.json ./
 COPY src/ ./src/
 RUN npm run build
