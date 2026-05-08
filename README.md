@@ -15,8 +15,8 @@ curl -O https://raw.githubusercontent.com/CIvanPiMa/GHT/main/docker-compose.yml
 docker compose up --build
 ```
 
-- Angular app → `http://localhost:80`
-- Sync server → `ws://localhost:8080`
+- Angular app → `http://localhost:8081`
+- Sync server → `ws://localhost:8082`
 - Game state is persisted in a named Docker volume (`ght-server-data`)
 
 ## Standalone
@@ -39,7 +39,7 @@ npm run build && npm start   # production
 
 1. Open GH Tracker → hamburger menu → **Server**
 2. **Host**: your server IP or hostname
-3. **Port**: `8080`
+3. **Port**: `8082`
 4. **Room Code**: any UUID (e.g. from [uuidgenerator.net](https://www.uuidgenerator.net))
 5. Share the same room code with other players to sync
 

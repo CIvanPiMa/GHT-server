@@ -1,0 +1,14 @@
+FROM node:24-alpine AS builder
+WORKDIR /app
+RUN apk add --no-cache python3 make g++
+COPY package.json ./
+RUN npm i
+EXPOSE 8080
+CMD ["npm", "run", "dev"]
+
+# docker build -t ght-server-dev -f Dockerfile.dev .
+# docker run -it --rm -p 4201:8080 \
+#   -e PUBLIC=true \
+#   -v $(pwd):/app \
+#   -v /app/node_modules \
+#   ght-server-dev
