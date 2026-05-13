@@ -62,3 +62,23 @@ export function setSettings(gameId: number, settings: unknown): void {
     .prepare('INSERT OR REPLACE INTO settings (game_id, settings) VALUES (?, ?)')
     .run(gameId, JSON.stringify(settings));
 }
+
+// ── UI helpers ────────────────────────────────────────────────────────────────
+
+export interface GameSummary {
+  id: number;
+  revision: number;
+  codes: string[];
+}
+
+export function listGames(): GameSummary[] {
+  const games = db
+    .prepare<[], { id: number; game: string }>('SELECT id, game FROM games ORDER BY id')
+    .all();
+  const codesStmt = db.prepare<[number], { code: string }>('SELECT code FROM game_codes WHERE game_id = ?');
+  return games.map((row) => {
+    const model = JSON.parse(row.game) as GameModel;
+    const codes = codesStmt.all(row.id).map((c) => c.code);
+    return { id: row.id, revision: model.revision, codes };
+  });
+}

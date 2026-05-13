@@ -12,6 +12,7 @@ function send(ws: WebSocket, msg: Record<string, unknown>): void {
 }
 
 function sendError(ws: WebSocket, message: string): void {
+  console.warn(`[GHT] Sending error to client: ${message}`);
   ws.send(JSON.stringify({ type: 'error', message, serverVersion: SERVER_VERSION }));
 }
 
@@ -48,6 +49,7 @@ export function handle(ws: WebSocket, raw: string): void {
   try {
     msg = JSON.parse(raw) as GhtMessage;
   } catch {
+    console.error('[GHT] Failed to parse message — invalid JSON');
     sendError(ws, 'Invalid JSON');
     return;
   }
@@ -59,10 +61,12 @@ export function handle(ws: WebSocket, raw: string): void {
     case 'request-game': {
       if (!code) { sendError(ws, 'Missing code'); return; }
 
+      console.log(`[GHT] Game requested for code ${code.substring(0, 8)}…`);
       let gameId = store.getGameIdByCode(code);
 
       if (gameId === null) {
         if (!PUBLIC_MODE) {
+          console.warn(`[GHT] Rejected unknown code ${code.substring(0, 8)}… (public mode off)`);
           sendError(ws, 'Invalid game code');
           return;
         }
@@ -83,6 +87,7 @@ export function handle(ws: WebSocket, raw: string): void {
       game.server = false;
 
       const permissions = store.getPermissionsByCode(code);
+      console.log(`[GHT] Sent game #${gameId} (rev ${game.revision}) to client`);
       send(ws, { type: 'game', payload: game });
       send(ws, { type: 'permissions', payload: permissions ?? null });
       break;
@@ -100,6 +105,7 @@ export function handle(ws: WebSocket, raw: string): void {
       const gameUpdate = msg.payload as GameModel | undefined;
       if (!gameUpdate) { sendError(ws, 'Missing payload'); return; }
 
+      console.log(`[GHT] ${msg.type} — game #${resolved.gameId} rev ${gameUpdate.revision ?? '?'}`);
       gameUpdate.server = false;
       store.setGame(resolved.gameId, gameUpdate);
 
@@ -120,6 +126,7 @@ export function handle(ws: WebSocket, raw: string): void {
       const resolved = resolve(ws, code);
       if (!resolved) { sendError(ws, 'Invalid game code'); return; }
 
+      console.log(`[GHT] request-settings — game #${resolved.gameId}`);
       const settings = store.getSettings(resolved.gameId);
       send(ws, { type: 'settings', payload: settings ?? null });
       break;
@@ -130,6 +137,7 @@ export function handle(ws: WebSocket, raw: string): void {
       const resolved = resolve(ws, code);
       if (!resolved) { sendError(ws, 'Invalid game code'); return; }
 
+      console.log(`[GHT] settings update — game #${resolved.gameId}`);
       if (msg.payload !== undefined && msg.payload !== null) {
         store.setSettings(resolved.gameId, msg.payload);
       }
@@ -149,6 +157,7 @@ export function handle(ws: WebSocket, raw: string): void {
 
       // Only root access (permissions === null) can create sub-codes
       if (resolved.permissions !== null) {
+        console.warn(`[GHT] permissions — rejected non-root attempt on game #${resolved.gameId}`);
         sendError(ws, 'Cannot create permissions!');
         return;
       }
@@ -181,6 +190,7 @@ export function handle(ws: WebSocket, raw: string): void {
       if (!code) return;
       const resolved = resolve(ws, code);
       if (!resolved) return;
+      console.log(`[GHT] requestUpdate — broadcasting to game #${resolved.gameId}`);
       sessions.broadcastAll(resolved.gameId, JSON.stringify({
         type: 'requestUpdate',
         serverVersion: SERVER_VERSION,
@@ -193,6 +203,7 @@ export function handle(ws: WebSocket, raw: string): void {
       if (!code) return;
       const resolved = resolve(ws, code);
       if (!resolved) return;
+      console.log(`[GHT] remoteCommand — relaying to game #${resolved.gameId}`);
       sessions.broadcast(resolved.gameId, ws, JSON.stringify({
         type: 'remoteCommand',
         payload: msg.payload,
