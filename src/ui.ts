@@ -1,3 +1,59 @@
+export const LOGIN_HTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GHT Server — Login</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f0f2f5; color: #222; }
+    .card { background: #fff; border-radius: 8px; padding: 36px 32px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); width: 100%; max-width: 360px; }
+    h1 { font-size: 1.3rem; margin: 0 0 4px; }
+    p.subtitle { color: #666; font-size: 0.85rem; margin: 0 0 24px; }
+    label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; }
+    input[type="password"] { width: 100%; border: 1px solid #ccc; border-radius: 4px; padding: 8px 10px; font-size: 0.95rem; margin-bottom: 16px; }
+    input[type="password"]:focus { outline: 2px solid #1a73e8; border-color: transparent; }
+    button { width: 100%; background: #1a73e8; color: #fff; border: none; border-radius: 4px; padding: 9px; font-size: 0.95rem; cursor: pointer; }
+    button:hover { background: #1558b0; }
+    .msg-error { color: #c00; font-size: 0.88rem; margin-top: 12px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>GHT Server</h1>
+    <p class="subtitle">Enter the admin password to continue</p>
+    <form id="login-form">
+      <label for="password">Password</label>
+      <input id="password" type="password" autocomplete="current-password" required autofocus>
+      <button type="submit">Sign in</button>
+      <div id="msg" class="msg-error"></div>
+    </form>
+  </div>
+  <script>
+    document.getElementById('login-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      var pw = document.getElementById('password').value;
+      var msgEl = document.getElementById('msg');
+      msgEl.textContent = '';
+      fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pw })
+      })
+        .then(function(r) { return r.json().then(function(b) { return { ok: r.ok, body: b }; }); })
+        .then(function(result) {
+          if (result.ok) {
+            window.location.href = '/';
+          } else {
+            msgEl.textContent = result.body.error || 'Login failed.';
+          }
+        })
+        .catch(function() { msgEl.textContent = 'Request failed.'; });
+    });
+  </script>
+</body>
+</html>`;
+
 export const UI_HTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,6 +64,8 @@ export const UI_HTML = `<!DOCTYPE html>
     body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 0 16px; color: #222; }
     h1 { font-size: 1.4rem; margin-bottom: 4px; }
     p.subtitle { color: #666; margin: 0 0 24px; font-size: 0.9rem; }
+    .header-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px; }
+    .logout-btn { background: none; border: none; color: #1a73e8; font-size: 0.85rem; cursor: pointer; padding: 0; text-decoration: underline; }
     table { width: 100%; border-collapse: collapse; margin-top: 8px; }
     th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #e0e0e0; }
     th { background: #f5f5f5; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em; }
@@ -24,7 +82,10 @@ export const UI_HTML = `<!DOCTYPE html>
   </style>
 </head>
 <body>
-  <h1>GHT Server</h1>
+  <div class="header-row">
+    <h1>GHT Server</h1>
+    <form method="POST" action="/logout" style="margin:0"><button class="logout-btn" type="submit">Sign out</button></form>
+  </div>
   <p class="subtitle">Active games in the database</p>
 
   <form class="create-form" id="create-form">
